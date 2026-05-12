@@ -43,7 +43,7 @@ pip install fastapi uvicorn httpx python-dotenv backboard-sdk
 
 *Create a `.env` file in the `backend` directory with your API keys:*
 ```env
-BACKBOARD_API_KEY=yhur_key_here
+BACKBOARD_API_KEY=your_key_here
 
 ```
 
@@ -69,6 +69,3 @@ npm run dev
 
 *Created by Utibe-Abasi Jacob Udoh for the Backboard Hackathon 2026*
 
-```
-
-```
