@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Terminal, User, Bot, Trash2 } from 'lucide-react';
 
-// Identity Registry for human-like personas
+
 const PERSONA_IDENTITIES = {
   nigeria_parent: ["Mummy Chinedu", "Daddy Blessing", "Mrs. Okoro", "Chief Adebayo", "Mama Junior"],
   tech_bro: ["Chad (Ex-FAANG)", "Skyler (Seed Round)", "Brad (Crypto Native)", "Justin (Stealth Mode)"],
@@ -19,9 +19,9 @@ const App = () => {
   const [streamingContent, setStreamingContent] = useState(""); 
   const [currentIdentity, setCurrentIdentity] = useState(""); 
   const scrollRef = useRef(null);
-  const audioRef = useRef(null); // Ref to handle audio playback
+  const audioRef = useRef(null); 
 
-  // Update name whenever style changes
+ 
   useEffect(() => {
     const names = PERSONA_IDENTITIES[style] || ["Anonymous"];
     const randomName = names[Math.floor(Math.random() * names.length)];
@@ -39,7 +39,7 @@ const App = () => {
     { id: 'passive_aggressive_coworker', label: 'Colleague', icon: '📎' }
   ];
 
-  // Typewriter logic updated to trigger audio playback
+  
   const typeText = (fullText, authorName, audioUrl) => {
     let index = 0;
     setStreamingContent("");
@@ -53,7 +53,7 @@ const App = () => {
         setMessages(prev => [...prev, { role: 'bot', content: fullText, authorName }]);
         setStreamingContent(""); 
         
-        // Play the judgmental voice once the typing finishes
+        
         if (audioUrl && audioRef.current) {
           audioRef.current.src = audioUrl;
           audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
@@ -65,7 +65,7 @@ const App = () => {
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    // Standardize audio initialization to bypass browser autoplay restrictions
+    
     if (!audioRef.current) {
       audioRef.current = new Audio();
     } else {
@@ -86,7 +86,7 @@ const App = () => {
       const data = await response.json();
       
       setLoading(false);
-      // Pass the audio_url from the backend to the typewriter
+     
       typeText(data.roast, currentIdentity, data.audio_url); 
     } catch (error) {
       setLoading(false);

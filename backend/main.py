@@ -37,20 +37,20 @@ async def roast_text(
     tier: str = Body("medium"), 
     style: str = Body("tech_bro")
 ):
-    # 1. Save memory in background using fixed personality.py
+   
     background_tasks.add_task(engine.save_excuse_to_memory, text, style)
 
     persona = engine.get_roast_persona(tier, style)
     api_key = os.getenv("BACKBOARD_API_KEY", "").strip()
     
-    # --- SHARED HEADERS FOR AUTHENTICATION ---
+    
     headers = {
         "X-API-Key": api_key,
         "authorization": f"Bearer {api_key}", 
         "Content-Type": "application/json"
     }
     
-    # --- GET THE ROAST TEXT ---
+    
     chat_url = "https://app.backboard.io/api/threads/messages"
     chat_payload = {
         "thread_id": str(ACTIVE_THREAD["id"]), 
@@ -66,12 +66,11 @@ async def roast_text(
 
     async with httpx.AsyncClient() as client:
         try:
-            # Step A: Get the text roast
+            
             chat_res = await client.post(chat_url, headers=headers, json=chat_payload, timeout=30.0)
             chat_data = chat_res.json()
             roast_content = chat_data.get("content", "Nonsense.")
 
-            # Step B: Get the audio for the voice of disappointment
             voice_map = {
                 "nigeria_parent": "en-NG-Standard-A",
                 "tech_bro": "en-US-Neural2-D",
@@ -86,11 +85,10 @@ async def roast_text(
                 "speed": 1.0
             }
             
-            # FIXED: Ensuring headers are passed to speech endpoint
             speech_res = await client.post(speech_url, headers=headers, json=speech_payload)
             speech_data = speech_res.json()
             
-            # DEBUG: Log the speech response in yhur Parrot OS terminal
+            
             print(f"DEBUG: Speech API Response: {speech_data}") 
             
             audio_url = speech_data.get("audio_url") or speech_data.get("url")
@@ -102,5 +100,5 @@ async def roast_text(
             }
             
         except Exception as e:
-            print(f"❌ Backend Error: {e}")
+            print(f" Backend Error: {e}")
             return {"error": "Connection Failed", "details": str(e)}
