@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Terminal, User, Bot, Trash2 } from 'lucide-react';
 
-
 const PERSONA_IDENTITIES = {
   nigeria_parent: ["Mummy Chinedu", "Daddy Blessing", "Mrs. Okoro", "Chief Adebayo", "Mama Junior"],
-  tech_bro: ["Chad (Ex-FAANG)", "Skyler (Seed Round)", "Brad (Crypto Native)", "Justin (Stealth Mode)"],
+  tech_bro: ["Chad (Ex-FAANG)", "Skyler (Seed Round)", "Rob (BackBoard CEO)", "Justin (Stealth Mode)"],
   bitter_ex: ["The Mistake", "Tiffany (Blocked)", "Sarah (Lawyer's Version)", "Ex from Hell"],
   passive_aggressive_coworker: ["Karen from HR", "Dave (CC'd Manager)", "Janet (Project Lead)", "Greg (Reply All)"]
 };
@@ -21,7 +20,6 @@ const App = () => {
   const scrollRef = useRef(null);
   const audioRef = useRef(null); 
 
- 
   useEffect(() => {
     const names = PERSONA_IDENTITIES[style] || ["Anonymous"];
     const randomName = names[Math.floor(Math.random() * names.length)];
@@ -54,9 +52,34 @@ const App = () => {
         setStreamingContent(""); 
         
         
-        if (audioUrl && audioRef.current) {
-          audioRef.current.src = audioUrl;
-          audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
+        if (audioUrl) {
+          console.log(" Backboard API successfully generated S3 URL:", audioUrl);
+          console.warn(" System Note: direct resource retrieval hits an AWS AccessDenied ACL block on the host bucket architecture.");
+        }
+
+        
+        if (fullText) {
+          try {
+            const utterance = new SpeechSynthesisUtterance(fullText);
+            
+            if (style === 'nigeria_parent') {
+              utterance.pitch = 0.85; 
+              utterance.rate = 0.95;
+            } else if (style === 'tech_bro') {
+              utterance.pitch = 1.25; 
+              utterance.rate = 1.15;
+            } else if (style === 'bitter_ex') {
+              utterance.pitch = 1.10;
+              utterance.rate = 1.05;
+            } else {
+              utterance.pitch = 1.00;
+              utterance.rate = 1.00;
+            }
+
+            window.speechSynthesis.speak(utterance);
+          } catch (audioError) {
+            console.error("Local client speech synthesis execution failed:", audioError);
+          }
         }
       }
     }, 30); 
@@ -66,10 +89,8 @@ const App = () => {
     if (!input.trim()) return;
 
     
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-    } else {
-      audioRef.current.pause();
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
     }
 
     const userMessage = { role: 'user', content: input };
@@ -86,7 +107,6 @@ const App = () => {
       const data = await response.json();
       
       setLoading(false);
-     
       typeText(data.roast, currentIdentity, data.audio_url); 
     } catch (error) {
       setLoading(false);
@@ -116,9 +136,8 @@ const App = () => {
           ))}
           <button onClick={() => {
             setMessages([]);
-            if (audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current.src = "";
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
             }
           }} className="p-2 hover:text-red-500 transition-colors">
             <Trash2 size={18} />
@@ -150,7 +169,7 @@ const App = () => {
                 : 'bg-white/5 border border-white/10 backdrop-blur-xl rounded-tl-none'
               }`}>
                 <div className="flex items-center gap-2 mb-1 opacity-50 text-[10px] uppercase font-bold tracking-tighter">
-                  {msg.role === 'user' ? <><User size={10} /> Yhu</> : <><Bot size={10} /> {msg.authorName || currentIdentity}</>}
+                  {msg.role === 'user' ? <><User size={10} /> You</> : <><Bot size={10} /> {msg.authorName || currentIdentity}</>}
                 </div>
                 <p className="text-sm leading-relaxed">{msg.content}</p>
               </div>

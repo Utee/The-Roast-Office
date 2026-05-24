@@ -1,5 +1,6 @@
 import os
 import httpx
+import subprocess  
 from pathlib import Path
 from fastapi import FastAPI, Body, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,9 +27,9 @@ async def startup_event():
     try:
         thread_obj = await engine.client.create_thread(engine.assistant_id)
         ACTIVE_THREAD["id"] = thread_obj.thread_id
-        print(f"🚀 Roaster Thread Active: {ACTIVE_THREAD['id']}")
+        print(f" Roaster Thread Active: {ACTIVE_THREAD['id']}")
     except Exception as e:
-        print(f"⚠️ Startup thread warning: {e}")
+        print(f" Startup thread warning: {e}")
 
 @app.post("/roast")
 async def roast_text(
@@ -37,12 +38,10 @@ async def roast_text(
     tier: str = Body("medium"), 
     style: str = Body("tech_bro")
 ):
-   
     background_tasks.add_task(engine.save_excuse_to_memory, text, style)
 
     persona = engine.get_roast_persona(tier, style)
     api_key = os.getenv("BACKBOARD_API_KEY", "").strip()
-    
     
     headers = {
         "X-API-Key": api_key,
@@ -50,7 +49,14 @@ async def roast_text(
         "Content-Type": "application/json"
     }
     
-    
+    voice_map = {
+        "nigeria_parent": "onyx",
+        "tech_bro": "fable",
+        "bitter_ex": "shimmer",
+        "passive_aggressive_coworker": "nova"
+    }
+    selected_voice = voice_map.get(style, "alloy")
+
     chat_url = "https://app.backboard.io/api/threads/messages"
     chat_payload = {
         "thread_id": str(ACTIVE_THREAD["id"]), 
@@ -61,37 +67,40 @@ async def roast_text(
         "stream": False,
         "send_to_llm": "true", 
         "memory": "on", 
-        "web_search": "off"
+        "web_search": "off",
+        "voice": {
+            "tts": {
+                "provider": "openai",
+                "model": "gpt-4o-mini-tts",
+                "voice": selected_voice
+            }
+        }
     }
 
     async with httpx.AsyncClient() as client:
         try:
-            
             chat_res = await client.post(chat_url, headers=headers, json=chat_payload, timeout=30.0)
             chat_data = chat_res.json()
             roast_content = chat_data.get("content", "Nonsense.")
 
-            voice_map = {
-                "nigeria_parent": "en-NG-Standard-A",
-                "tech_bro": "en-US-Neural2-D",
-                "bitter_ex": "en-GB-Neural2-B",
-                "passive_aggressive_coworker": "en-IE-Standard-A"
-            }
-            
-            speech_url = "https://app.backboard.io/api/tts"
-            speech_payload = {
-                "text": roast_content,
-                "voice": voice_map.get(style, "en-US-Neural2-F"),
-                "speed": 1.0
-            }
-            
-            speech_res = await client.post(speech_url, headers=headers, json=speech_payload)
-            speech_data = speech_res.json()
-            
-            
-            print(f"DEBUG: Speech API Response: {speech_data}") 
-            
-            audio_url = speech_data.get("audio_url") or speech_data.get("url")
+            audio_url = None
+            messages_list = chat_data.get("messages", [])
+            if messages_list:
+                audio_url = messages_list[-1].get("voice_records", {}).get("tts", {}).get("audio_url")
+            else:
+                audio_url = chat_data.get("voice_records", {}).get("tts", {}).get("audio_url")
+
+            print(f"DEBUG: Text Roast: {roast_content[:50]}...")
+            print(f"DEBUG: Generated Audio URL: {audio_url}")
+            try:
+                
+                speed = "140" if style == "nigeria_parent" else "175"
+                pitch = "40" if style == "nigeria_parent" else "70"
+                
+                subprocess.Popen(["espeak", "-s", speed, "-p", pitch, roast_content])
+            except Exception as audio_err:
+                print(f"⚠️ Local audio playback skip: {audio_err}")
+           
 
             return {
                 "roast": roast_content,
